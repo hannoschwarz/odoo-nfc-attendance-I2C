@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odoo Attendance Kiosk</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-ready: #2c3e50;
+            --card-success: #27ae60;
+            --card-error: #c0392b;
+            --text-main: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrolling in kiosk mode */
+        }
+
+        #kiosk-card {
+            width: 85%;
+            height: 70%;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        /* State Classes */
+        .ready { background-color: var(--card-ready); border: 4px solid #34495e; }
+        .success { background-color: var(--card-success); transform: scale(1.02); }
+        .error { background-color: var(--card-error); animation: shake 0.5s; }
+
+        h1 {
+            font-size: 4.5rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        p {
+            font-size: 2rem;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+        }
+
+        /* Shake animation for errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-15px); }
+            75% { transform: translateX(15px); }
+        }
+
+        /* Pulse animation for the "Ready" state */
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(52, 152, 219, 0.4); }
+            100% { box-shadow: 0 0 0 30px rgba(52, 152, 219, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="kiosk-card" class="ready pulse">
+        <div id="icon" class="icon">🪪</div>
+        <h1 id="main-msg">Tarjeta por favor</h1>
+        <p id="sub-msg">Presente su tarjeta sobre el lector.</p>
+    </div>
+
+   <script>
+        const socket = io();
+        const card = document.getElementById('kiosk-card');
+        const icon = document.getElementById('icon');
+        const mainMsg = document.getElementById('main-msg');
+        const subMsg = document.getElementById('sub-msg');
+
+        socket.on('connect', () => {
+            console.log('Connected to Raspberry Pi Backend');
+        });
+
+        socket.on('scan_result', (data) => {
+            // Remove the ready state and pulse
+            card.classList.remove('ready', 'pulse');
+
+            if (data.status === 'success') {
+                // Success State
+                card.classList.add('success');
+                icon.innerText = "✅";
+                mainMsg.innerText = "Aceptado";
+                subMsg.innerText = "Tarjeta: " + data.card_id;
+            } else {
+                // Error State
+                card.classList.add('error');
+                icon.innerText = "❌";
+                mainMsg.innerText = "Error";
+                subMsg.innerText = data.msg || "Intente de nuevo. " + data.card_id;
+            }
+
+            // Return to Ready State after 3 seconds
+            setTimeout(() => {
+                card.classList.remove('success', 'error');
+                card.classList.add('ready', 'pulse');
+                icon.innerText = "🪪";
+                mainMsg.innerText = "Tarjeta por favor";
+                subMsg.innerText = "Presente su tarjeta sobre el lector.";
+            }, 3000);
+        });
+
+        // Auto-refresh page if connection is lost for too long
+        socket.on('disconnect', () => {
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
