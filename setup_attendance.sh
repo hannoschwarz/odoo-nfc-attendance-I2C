@@ -3,49 +3,86 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-PROJECT_DIR="~/attendance"
+# Use absolute path for reliability
+PROJECT_DIR="/home/$USER/attendance"
 
 echo "🚀 Starting Odoo NFC Kiosk Installation..."
 
 # --- 1. SYSTEM UPDATES & BUILD TOOLS ---
 echo "⚙️ Installing System Dependencies..."
 sudo apt update
-sudo apt install -y python3-pip python3-venv git unclutter chromium-browser \
+sudo apt install -y python3-pip python3-venv git unclutter chromium \
      netcat-openbsd swig python3-dev liblgpio-dev build-essential p7zip-full \
      python3-lgpio wget
 
+# --- 0. FIX LOCALES (Hard Reset) ---
+echo "🌐 Fixing Locales..."
+sudo apt-get install -y locales
+sudo locale-gen en_GB.UTF-8
+# Set them for the current session to stop the Perl/Bash warnings
+export LANG=en_GB.UTF-8
+export LANGUAGE=en_GB.UTF-8
+export LC_ALL=en_GB.UTF-8
+
+
 # --- 2. INSTALL WIRINGPI (DEBIAN BUILD) ---
 echo "🏗️ Building WiringPi..."
-cd ~
-if [ ! -d "WiringPi" ]; then
-    git clone https://github.com/WiringPi/WiringPi.git
+
+# Move to home and clear everything to start fresh
+cd /home/$USER
+sudo rm -rf WiringPi
+
+echo "📥 Cloning fresh WiringPi..."
+git clone https://github.com/WiringPi/WiringPi.git
+cd /home/$USER/WiringPi
+
+echo "🔨 Starting Build..."
+sudo ./build debian
+
+echo "🔍 Locating the .deb file..."
+# RECURSIVE SEARCH: This finds it even if it's inside 'debian-template'
+DEB_FILE=$(find /home/$USER/WiringPi -name "wiringpi*.deb" | head -n 1)
+
+if [ -n "$DEB_FILE" ]; then
+    echo "📦 Found package at: $DEB_FILE"
+    echo "🚀 Installing..."
+    sudo apt install "$DEB_FILE" -y
+else
+    echo "❌ Error: Could not find the built .deb file inside /home/$USER/WiringPi."
+    exit 1
 fi
-cd WiringPi
-./build debian
-DEB_FILE=$(ls wiringpi-*.deb | head -n 1)
-sudo apt install ./"$DEB_FILE" -y
+
+# Return to repo
+cd /home/$USER/odoo-nfc-attendance
 
 # --- 3. DOWNLOAD & EXTRACT PN532 DEMO ---
 echo "📦 Downloading Waveshare PN532 Library..."
-cd ~
+cd /home/$USER
 wget -N https://files.waveshare.com/upload/6/67/pn532-nfc-hat-code.7z
 7z x pn532-nfc-hat-code.7z -r -o./Pn532-nfc-hat-code -y
 sudo chmod 777 -R Pn532-nfc-hat-code/
 
 # --- 4. PROJECT STRUCTURE ---
 echo "📂 Organizing Project Folders..."
-mkdir -p $PROJECT_DIR/templates
+mkdir -p "$PROJECT_DIR/templates"
 
-# Copy only the driver folder into our project
-cp -r ~/Pn532-nfc-hat-code/RaspberryPi/python/pn532 $PROJECT_DIR/
-touch $PROJECT_DIR/pn532/__init__.py
+# Use find to locate the 'pn532' library folder inside the extracted demo
+SRC_PN532=$(find /home/$USER/Pn532-nfc-hat-code -name "pn532" -type d | head -n 1)
+
+if [ -n "$SRC_PN532" ]; then
+    echo "🚚 Copying library from $SRC_PN532"
+    cp -r "$SRC_PN532" "$PROJECT_DIR/"
+    touch "$PROJECT_DIR/pn532/__init__.py"
+else
+    echo "❌ Error: Could not find the 'pn532' library folder in the extracted files."
+    exit 1
+fi
 
 # --- 5. PYTHON VIRTUAL ENVIRONMENT ---
 echo "🐍 Setting up Python Environment..."
-cd $PROJECT_DIR
+cd "$PROJECT_DIR"
 python3 -m venv env
 source env/bin/activate
-# Install all required libraries
 pip install flask flask-socketio requests eventlet pyserial spidev rpi-lgpio python-dotenv
 deactivate
 
@@ -53,10 +90,10 @@ deactivate
 echo "📄 Setting up Configuration template..."
 if [ ! -f .env ]; then
     cat <<EOF > .env
-# Odoo Webhook URL (from Automation Rule)
-ODOO_WEBHOOK_URL=https://your-odoo-domain.com/web/hook/xxxx-xxxx-xxxx
+# Odoo Webhook URL
+ODOO_WEBHOOK_URL=https://your-odoo-domain.com/web/hook/xxxx
 
-# Flask Security (Random string)
+# Flask Security
 APP_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(16))')
 EOF
 fi
@@ -75,7 +112,7 @@ Description=Odoo NFC Backend
 After=network.target
 
 [Service]
-User=conceptos
+User=$USER
 WorkingDirectory=$PROJECT_DIR
 ExecStart=$PROJECT_DIR/env/bin/python $PROJECT_DIR/app.py
 Restart=always
@@ -92,11 +129,11 @@ Description=Odoo NFC Kiosk Browser
 After=attendance_app.service
 
 [Service]
-User=conceptos
+User=$USER
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/conceptos/.Xauthority
-ExecStartPre=/bin/bash -c \"sed -i 's/\\\"exited_cleanly\\\":false/\\\"exited_cleanly\\\":true/' /home/conceptos/.config/chromium/Default/Preferences || true\"
-ExecStart=/usr/bin/chromium --noerrdialogs --disable-infobars --kiosk --no-first-run http://localhost:5000
+Environment=XAUTHORITY=/home/$USER/.Xauthority
+ExecStartPre=/bin/bash -c \"sed -i 's/\\\"exited_cleanly\\\":false/\\\"exited_cleanly\\\":true/' /home/$USER/.config/chromium/Default/Preferences || true\"
+ExecStart=/usr/bin/chromium-browser --noerrdialogs --disable-infobars --kiosk --no-first-run http://localhost:5000
 Restart=always
 RestartSec=10
 
