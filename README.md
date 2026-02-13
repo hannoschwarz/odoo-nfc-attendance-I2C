@@ -36,10 +36,10 @@ Ensure your Pi is running the latest OS and you have SSH access or a keyboard/mo
 Run these commands in your terminal:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/odoo-nfc-attendance.git
+git clone https://github.com/alanschwarz/odoo-nfc-attendance.git
 cd odoo-nfc-attendance
-chmod +x install_kiosk.sh
-./install_kiosk.sh
+chmod +x setup_attendance.sh
+./setup_attendance.sh
 
 ```
 
@@ -58,7 +58,7 @@ The script creates a directory at `~/attendance`. You must configure your Webhoo
 ## 📂 Project Structure
 
 * `app.py`: The Flask backend that listens to the NFC hardware.
-* `install_kiosk.sh`: The "bulletproof" installer for hardware drivers and services.
+* `setup_attendance.sh`: The "bulletproof" installer for hardware drivers and services.
 * `pn532/`: The low-level hardware driver (installed automatically from Waveshare sources).
 * `templates/`: The HTML/JS frontend for the kiosk display.
 * `.env`: (Private) Stores your Odoo URL and Flask secret keys.
@@ -78,12 +78,14 @@ The app runs as two systemd services:
 * `attendance_app.service`: Manages the Python hardware listener.
 * `attendance_kiosk.service`: Manages the Chromium browser window.
 
-**Commands to check status:**
+**Commands to check status or logs:**
 
 ```bash
 sudo systemctl status attendance_app
-sudo systemctl status attendance_kiosk
+journalctl -u attendance_app.service -f
 
+sudo systemctl status attendance_kiosk
+journalctl -u attendance_kiosk.service -f
 ```
 
 ---
@@ -98,7 +100,7 @@ Contributions are welcome! If you find a bug or have a feature request (like sup
 
 **MIT License**
 
-Copyright (c) 2026 [Your Name]
+Copyright (c) 2026 Alan Schwarz
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software... (See the [LICENSE](https://www.google.com/search?q=LICENSE) file for the full text).
 
