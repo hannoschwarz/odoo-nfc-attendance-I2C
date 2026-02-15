@@ -64,8 +64,8 @@ def init_hardware():
         pn532_hw = PN532_I2C(i2c, debug=False)
         # 2. Initialize ONCE using your working pins
         #pn532_hw = PN532_SPI(debug=False, reset=20, cs=4)
-        ic, ver, rev, support = pn532_hw.get_firmware_version()
-        #ic, ver, rev, support = pn532_hw.firmware_version
+        #ic, ver, rev, support = pn532_hw.get_firmware_version()
+        ic, ver, rev, support = pn532_hw.firmware_version
         print(f"✅ PN532 Detected! Firmware version: {ver}.{rev}")
         
         pn532_hw.SAM_configuration()
