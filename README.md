@@ -105,3 +105,25 @@ Copyright (c) 2026 Alan Schwarz
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software... (See the [LICENSE](https://www.google.com/search?q=LICENSE) file for the full text).
 
 **Disclaimer**: This software is provided "as is", without warranty of any kind. The author is not responsible for any hardware damage or data loss.
+
+
+__________________________________________
+Adaption to I2C requires:
+__________________________________________
+  sudo apt update
+  sudo apt install python3-venv python3-pip -y
+
+  in the attendance directory:
+    # Create the virtual environment (naming it 'env')
+    python3 -m venv env --system-site-packages
+    # Activate it
+    source env/bin/activate
+    # Install the hardware bridge and the PN532 library
+    pip install adafruit-blinka adafruit-circuitpython-pn532
+    # Install your web/Odoo requirements
+    pip install flask flask-socketio requests
+    #and for raspberry 5:
+    pip uninstall -y RPi.GPIO
+    pip install rpi-lgpio
+******************************************  
+    
