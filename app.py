@@ -2,16 +2,17 @@ import time
 import threading
 import requests
 import sys
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import os
 from dotenv import load_dotenv
 
-import board
-import busio
-from adafruit_pn532.i2c import PN532_I2C
-import digitalio
+from smartcard.System import readers
+from smartcard.util import toHexString
+from smartcard.Exceptions import NoCardException
+
+#import digitalio
 
 # Load configuration from .env file
 load_dotenv()
@@ -28,51 +29,21 @@ app.config['SECRET_KEY'] = APP_SECRET_KEY
 # Get the directory where app.py is located
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Check if the folder exists and is visible
-""" if os.path.isdir(os.path.join(current_dir, 'pn532')):
-    sys.path.append(current_dir)
-    print("✅ Found 'pn532' folder in local directory")
-else:
-    print(f"❌ Error: Could not find 'pn532' folder at {current_dir}")
-    sys.exit(1)
- """
-# Now try the import
-""" try:
-    from adafruit_pn532.i2c import PN532_I2C
-except Exception as e:
-    print(f"❌ Import failed: {e}")
-    sys.exit(1)
- """
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'odoo_nfc_kiosk_2026'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=True, engineio_logger=True)
 
-# Global hardware object
-pn532_hw = None
 
 def init_hardware():
-    global pn532_hw
-    try:
-        # I2C setup
-        i2c = busio.I2C(board.SCL, board.SDA)
-        # On Raspberry Pi, the PN532 usually needs a reset pin, but often works without it.
-        # If it fails, connect a GPIO to the RST pin and define it here.
-        
-        # 1. Physical Reset
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        pn532_hw = PN532_I2C(i2c, debug=False)
-        # 2. Initialize ONCE using your working pins
-        #pn532_hw = PN532_SPI(debug=False, reset=20, cs=4)
-        #ic, ver, rev, support = pn532_hw.get_firmware_version()
-        ic, ver, rev, support = pn532_hw.firmware_version
-        print(f"✅ PN532 Detected! Firmware version: {ver}.{rev}")
-        
-        pn532_hw.SAM_configuration()
-        return True
-    except Exception as e:
-        print(f"❌ Hardware Init Failed: {e}")
+  # USB readers are Plug-and-Play. We just check if it's plugged in.
+    available_readers = readers()
+    if not available_readers:
+        print("❌ No USB NFC Reader found!")
         return False
+    print(f"✅ Found USB Reader: {available_readers[0]}")
+    return True
+    
 
 def trigger_odoo(card_id):
     try:
@@ -85,29 +56,35 @@ def trigger_odoo(card_id):
         return False
 
 def nfc_worker():
-    print("🚀 Background NFC listener started...")
+    print("🚀 USB NFC listener started...")
     while True:
-        socketio.sleep(0.1)
+        socketio.sleep(0.5)
         try:
-            # Use the global hardware object
-            #uid = pn532_hw.read_passive_target(timeout=0.5)
-            uid = pn532_hw.read_passive_target(timeout=0.5)
-            if uid is not None:
-                card_id = "".join([hex(i)[2:].upper().zfill(2) for i in uid])
-                print(f"🔍 Card Scanned: {card_id}")
+           r = readers()
+            if not r: continue
+            
+            connection = r[0].createConnection()
+            connection.connect()
+            
+            # Command to get the Card UID (Standard ACR122U/1252U APDU command)
+            GET_UID = [0xFF, 0xCA, 0x00, 0x00, 0x00]
+            data, sw1, sw2 = connection.transmit(GET_UID)
+            
+            if sw1 == 0x90: # Success code
+                card_id = toHexString(data).replace(" ", "")
+                print(f"🔍 USB Card Scanned: {card_id}")
                 
                 success = trigger_odoo(card_id)
-                
-                # Use the global socketio object to emit
                 socketio.emit('scan_result', {
                     'status': 'success' if success else 'error',
-                    'card_id': card_id,
-                    'msg': '' if success else f"Odoo Error: {card_id}"
+                    'card_id': card_id
                 })
-                socketio.sleep(2) # Cooldown
+                socketio.sleep(3) # Cooldown to prevent double-scans
+        except NoCardException:
+            continue # No card on the reader, keep looking
         except Exception as e:
-            print(f"Loop Error: {e}")
-            time.sleep(1)
+            # Most common error is the reader being unplugged or "Card Not Found"
+            pass
 
 @app.route('/')
 def index():
@@ -122,4 +99,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\nStopping...")
     finally:
-        GPIO.cleanup()
+        #GPIO.cleanup()
