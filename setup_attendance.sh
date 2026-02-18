@@ -13,7 +13,7 @@ echo "⚙️ Installing System Dependencies..."
 sudo apt update
 sudo apt install -y python3-pip python3-venv git unclutter chromium \
      netcat-openbsd swig python3-dev liblgpio-dev build-essential p7zip-full \
-     python3-lgpio wget
+     python3-lgpio wget libpcsclite-dev  gcc libccid pcscd pcsc-tools
 
 # --- 0. FIX LOCALES (Hard Reset) ---
 echo "🌐 Fixing Locales..."
@@ -55,35 +55,17 @@ fi
 # Return to repo
 cd /home/$USER/odoo-nfc-attendance
 
-# --- 3. DOWNLOAD & EXTRACT PN532 DEMO ---
-echo "📦 Downloading Waveshare PN532 Library..."
-cd /home/$USER
-wget -N https://files.waveshare.com/upload/6/67/pn532-nfc-hat-code.7z
-7z x pn532-nfc-hat-code.7z -r -o./Pn532-nfc-hat-code -y
-sudo chmod 777 -R Pn532-nfc-hat-code/
-
 # --- 4. PROJECT STRUCTURE ---
 echo "📂 Organizing Project Folders..."
 mkdir -p "$PROJECT_DIR/templates"
 
-# Use find to locate the 'pn532' library folder inside the extracted demo
-SRC_PN532=$(find /home/$USER/Pn532-nfc-hat-code -name "pn532" -type d | head -n 1)
-
-if [ -n "$SRC_PN532" ]; then
-    echo "🚚 Copying library from $SRC_PN532"
-    cp -r "$SRC_PN532" "$PROJECT_DIR/"
-    touch "$PROJECT_DIR/pn532/__init__.py"
-else
-    echo "❌ Error: Could not find the 'pn532' library folder in the extracted files."
-    exit 1
-fi
 
 # --- 5. PYTHON VIRTUAL ENVIRONMENT ---
 echo "🐍 Setting up Python Environment..."
 cd "$PROJECT_DIR"
 python3 -m venv env
 source env/bin/activate
-pip install flask flask-socketio requests eventlet pyserial spidev rpi-lgpio python-dotenv
+pip install flask flask-socketio requests eventlet python-dotenv pyscard
 deactivate
 
 # --- 6. CONFIGURATION (DOTENV) ---
