@@ -2,7 +2,7 @@ import time
 import threading
 import requests
 import sys
-#import RPi.GPIO as GPIO
+
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import os
@@ -11,8 +11,6 @@ from dotenv import load_dotenv
 from smartcard.System import readers
 from smartcard.util import toHexString
 from smartcard.Exceptions import NoCardException
-
-#import digitalio
 
 # Load configuration from .env file
 load_dotenv()
@@ -98,5 +96,4 @@ if __name__ == '__main__':
             socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\nStopping...")
-    finally:
-        #GPIO.cleanup()
+    
