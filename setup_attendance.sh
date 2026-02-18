@@ -80,9 +80,6 @@ APP_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(16))')
 EOF
 fi
 
-# --- 7. ENABLE SPI HARDWARE ---
-echo "🔌 Enabling SPI Interface..."
-sudo raspi-config nonint do_spi 0
 
 # --- 8. SYSTEMD SERVICES ---
 echo "🖥️ Configuring System Services..."
