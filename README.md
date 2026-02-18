@@ -2,7 +2,7 @@
 
 **Turn your Raspberry Pi into a professional, plug-and-play attendance terminal for Odoo.**
 
-This project provides a robust, real-time interface for Odoo's Attendance module. It uses a **Waveshare PN532 NFC HAT** to read employee badges and sends the data to Odoo via Webhooks.
+This project provides a robust, real-time interface for Odoo's Attendance module. It uses a **ACS ACR1256** usb card reader to read employee badges and sends the data to Odoo via Webhooks.
 
 ---
 
@@ -19,7 +19,7 @@ This project provides a robust, real-time interface for Odoo's Attendance module
 ## 🛠️ Hardware Requirements
 
 1. **Raspberry Pi** (3, 4, or 5).
-2. **Waveshare PN532 NFC HAT**.
+2. **ACS ACR 1256 usb nfc reader**.
 3. **MicroSD Card** (8GB+ with Raspberry Pi OS Bookworm).
 4. **Ethernet Connection** (Recommended for stability).
 
@@ -59,7 +59,7 @@ The script creates a directory at `~/attendance`. You must configure your Webhoo
 
 * `app.py`: The Flask backend that listens to the NFC hardware.
 * `setup_attendance.sh`: The "bulletproof" installer for hardware drivers and services.
-* `pn532/`: The low-level hardware driver (installed automatically from Waveshare sources).
+* `libasccid1_1.1.12-1~bpo12+1arm64.deb`: The low-level hardware driver (installed automatically from ACS.com.hk sources).
 * `templates/`: The HTML/JS frontend for the kiosk display.
 * `.env`: (Private) Stores your Odoo URL and Flask secret keys.
 
