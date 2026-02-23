@@ -13,7 +13,8 @@ echo "⚙️ Installing System Dependencies..."
 sudo apt update
 sudo apt install -y python3-pip python3-venv git unclutter chromium \
      netcat-openbsd swig python3-dev liblgpio-dev build-essential p7zip-full \
-     python3-lgpio wget libpcsclite-dev  gcc libccid pcscd pcsc-tools
+     wget libpcsclite-dev  gcc libccid pcscd pcsc-tools
+sudo apt install python3-rpi.gpio python3-gpiozero -y     
 
 # --- 0. FIX LOCALES (Hard Reset) ---
 echo "🌐 Fixing Locales..."
