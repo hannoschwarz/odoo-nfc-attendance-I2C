@@ -26,34 +26,34 @@ export LC_ALL=en_GB.UTF-8
 
 
 # --- 2. INSTALL WIRINGPI (DEBIAN BUILD) ---
-echo "🏗️ Building WiringPi..."
+#echo "🏗️ Building WiringPi..."
 
 # Move to home and clear everything to start fresh
-cd /home/$USER
-sudo rm -rf WiringPi
+#cd /home/$USER
+#sudo rm -rf WiringPi
 
-echo "📥 Cloning fresh WiringPi..."
-git clone https://github.com/WiringPi/WiringPi.git
-cd /home/$USER/WiringPi
+#echo "📥 Cloning fresh WiringPi..."
+#git clone https://github.com/WiringPi/WiringPi.git
+#cd /home/$USER/WiringPi
 
-echo "🔨 Starting Build..."
-sudo ./build debian
+#echo "🔨 Starting Build..."
+#sudo ./build debian
 
-echo "🔍 Locating the .deb file..."
+#echo "🔍 Locating the .deb file..."
 # RECURSIVE SEARCH: This finds it even if it's inside 'debian-template'
-DEB_FILE=$(find /home/$USER/WiringPi -name "wiringpi*.deb" | head -n 1)
+#DEB_FILE=$(find /home/$USER/WiringPi -name "wiringpi*.deb" | head -n 1)
 
-if [ -n "$DEB_FILE" ]; then
-    echo "📦 Found package at: $DEB_FILE"
-    echo "🚀 Installing..."
-    sudo apt install "$DEB_FILE" -y
-else
-    echo "❌ Error: Could not find the built .deb file inside /home/$USER/WiringPi."
-    exit 1
-fi
+#if [ -n "$DEB_FILE" ]; then
+#    echo "📦 Found package at: $DEB_FILE"
+#    echo "🚀 Installing..."
+#    sudo apt install "$DEB_FILE" -y
+#else
+#    echo "❌ Error: Could not find the built .deb file inside /home/$USER/WiringPi."
+#    exit 1
+#fi
 
 # Return to repo
-cd /home/$USER/odoo-nfc-attendance
+cd /home/$USER/odoo-nfc-attendance-ACR1256
 
 # install the driver for the NFC reader
 sudo dpkg libasccid1_1.1.12-1~bpo12+1arm64.deb
@@ -124,7 +124,7 @@ WantedBy=graphical.target
 EOF"
 
 sudo systemctl daemon-reload
-sudo systemctl enable attendance_app.service attendance_kiosk.service
+sudo systemctl enable attendance_app.service 
 
 echo "-------------------------------------------------------"
 echo "✅ INSTALLATION COMPLETE!"
