@@ -14,7 +14,12 @@ sudo apt update
 sudo apt install -y python3-pip python3-venv git unclutter chromium \
      netcat-openbsd swig python3-dev liblgpio-dev build-essential p7zip-full \
      wget libpcsclite-dev  gcc libccid pcscd pcsc-tools
-sudo apt install python3-rpi.gpio python3-gpiozero -y     
+sudo apt install python3-rpi.gpio python3-gpiozero -y   
+
+
+
+# After installing "sudo apt install libccid -y" restart the service:
+sudo systemctl restart pcscd
 
 # --- 0. FIX LOCALES (Hard Reset) ---
 echo "🌐 Fixing Locales..."
@@ -69,7 +74,7 @@ echo "🐍 Setting up Python Environment..."
 cd "$PROJECT_DIR"
 python3 -m venv env
 source env/bin/activate
-pip install flask flask-socketio requests eventlet python-dotenv pyscard
+pip install flask flask-socketio requests eventlet python-dotenv pyscard lgpio gpiozero
 deactivate
 
 # --- 6. CONFIGURATION (DOTENV) ---
